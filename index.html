@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR-Code Scanner</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="Logo App.jpg" type="image/jpeg">
+</head>
+<body>
+
+    <!-- Menüleiste -->
+    <header>
+        <button id="menuButton">☰ Menü</button>
+    
+    </header>
+
+    <!-- Kamera öffnen Hinweis -->
+    <main>
+        <div class="text-container">
+            <p>
+                <span style="font-size: 36px; display: block; margin-bottom: 25px;">Mehrere Verletzte nach Messerstecherei</span>
+                Bei Eintreffen ist die Polizei bereits vor Ort.<br>
+                Die Polizei gibt an, dass es bei einer Feier zwei Personen mit einem Messer auf mehrere Beteiligte eingestochen haben.<br>
+                Die Täter sind bereits durch die Polizei festgenommen.<br>
+                Die Polizei gibt die Räumlichkeiten frei.<br>
+                Es befinden sich mehrere Verletzte im Gebäude.<br>
+                Teilweise wurde durch Kollegen der Polizei erste Hilfe geleistet.
+            </p>
+        </div>
+    </main>
+    
+        <div class="camera-container">
+            <button id="cameraButton" class="old-style-button">Patienten scannen</button>
+        </div>
+        <video id="video" autoplay playsinline style="display:none;"></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+    </main>
+
+    <!-- Modal für Menü -->
+    <div id="menuModal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <h2>Menü</h2>
+            <ul>
+                <li><a href="patient1.html">Patient1</a></li>
+                <li><a href="patient2.html">Patient2</a></li>
+                <li><a href="patient3.html">Patient3</a></li>
+                <li><a href="patient4.html">Patient4</a></li>
+                <li><a href="patient5.html">Patient5</a></li>
+                <li><a href="patient6.html">Patient6</a></li>
+                <li><a href="patient7.html">Patient7</a></li>
+                <li><a href="patient7.html">Patient8</a></li>
+                <li><a href="patient7.html">Patient9</a></li>
+                <li><a href="patient7.html">Patient10</a></li>
+                <li><a href="patient7.html">Patient11</a></li>
+                <li><a href="patient7.html">Patient12</a></li>
+                <li><a href="patient7.html">Patient13</a></li>
+                <li><a href="patient7.html">Patient14</a></li>
+                <li><a href="Einstellungen.html">Einstellungen</a></li>
+                <li><a href="#about">Über uns</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Einsatzabbruch Button -->
+    <div class="button-container">
+        <a href="index.html" id="einsatzabbruchButton">Einsatzabbruch</a>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const cameraButton = document.getElementById("cameraButton");
+            const video = document.getElementById("video");
+            const canvas = document.getElementById("canvas");
+            const canvasContext = canvas.getContext('2d');
+            const menuButton = document.getElementById("menuButton");
+            const menuModal = document.getElementById("menuModal");
+            const closeButton = document.querySelector(".close");
+
+            let currentStream = null;
+
+            // Menü öffnen und schließen
+            menuButton.addEventListener("click", () => {
+                menuModal.style.display = "block";
+            });
+
+            closeButton.addEventListener("click", () => {
+                menuModal.style.display = "none";
+            });
+
+            window.addEventListener("click", (event) => {
+                if (event.target === menuModal) {
+                    menuModal.style.display = "none";
+                }
+            });
+
+            // Kamera starten
+            cameraButton.addEventListener("click", async () => {
+                try {
+                    cameraButton.style.display = "none";
+
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        alert("Die Kamera-API wird von diesem Gerät nicht unterstützt.");
+                        return;
+                    }
+
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "environment" } // Rückkamera bevorzugt
+                    });
+
+                    currentStream = stream;
+
+                    video.srcObject = stream;
+                    video.style.display = "block";
+
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        startQRCodeDetection();
+                    };
+                } catch (error) {
+                    console.error("Kamera-Zugriff fehlgeschlagen:", error);
+                    alert("Kamera-Zugriff fehlgeschlagen. Bitte Berechtigungen prüfen.");
+                }
+            });
+
+            // QR-Code-Erkennung
+            function startQRCodeDetection() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+
+                const scanQRCode = () => {
+                    canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+
+                    const code = jsQR(imageData.data, canvas.width, canvas.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+
+                    if (code) {
+                        alert("QR-Code erkannt: " + code.data);
+                        window.location.href = code.data;
+                    } else {
+                        requestAnimationFrame(scanQRCode);
+                    }
+                };
+
+                requestAnimationFrame(scanQRCode);
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #d3d3d3;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        #menuButton {
+            position: absolute;
+            left: 15px;
+            background: none;
+            color: white;
+            border: black;
+            font-size: 1.9em;
+            cursor: pointer;
+        }
+
+        .text-container {
+            margin: auto;
+            margin-top: 70px;
+            max-width: 600px;
+            padding: 20px;
+            background-color: whitesmoke;
+            color: rgb(8, 0, 0);
+            text-align: center;
+            border-radius: 10px;
+            border: 8px solid transparent; /* Standard transparenten Rand */
+            animation: blink 1s infinite; /* Blinken dauerhaft aktiv */
+        }
+
+        .camera-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #cameraButton {
+            padding: 20px 40px;
+            font-size: 1.2em;
+            background-color: #fa0d0d;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #menuModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 10px;
+        }
+
+        .close {
+            float: right;
+            cursor: pointer;
+        }
+
+        .button-container {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #einsatzabbruchButton {
+            padding: 15px 15px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+        /* Hier beginnt die Anpassung */
+        /* Hover-Effekt für den Textbereich mit Blink-Effekt in Rot */
+        .text-container:hover {
+            border: 9px solid red; /* Roter Rand bei Hover */
+            animation: blink 1s infinite; /* Blinken des Rahmens */
+        
+          
+        }
+
+        /* Schriftgröße im Textbereich */
+        .text-container p {
+            font-size: 1.8em; /* Größere Schrift */
+        }
+
+        /* Blinkende Animation */
+        @keyframes blink {
+            0% { border-color: red; }
+            50% { border-color: transparent; }
+            100% { border-color: red; }
+        }
+    </style>
+</body>
+</html>
