@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buttons anzeigen</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            margin: 0;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+            max-width: 600px;
+            margin-top: 40px; 
+            margin-bottom: 100px; 
+        }
+
+        .btn {
+            width: 90%;
+            max-width: 600px;
+            padding: 25px;
+            background-color: rgb(75, 78, 119);
+            color: aliceblue;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 15px 0;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 6px 6px 15px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s ease;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .btn span {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color:red;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: rgb(100, 100, 150);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #einsatzabbruchButton {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-align: center;
+            z-index: 2000;
+        }
+
+        #einsatzabbruchButton:hover {
+            background-color: #c0392b;
+        }
+
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #modalContent {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            max-width: 90%;
+        }
+
+        #modal img {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+
+        #modal span {
+            display: block;
+            margin-top: 10px;
+            color: #e74c3c;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Buttons -->
+<div class="button-container">
+    <button id="btn1" class="btn">
+        Pat. M 41 Jahre alt.<br>Der Pat. liegt auf dem Rücken.<br>
+        Der Pat. reagiert nicht auf Ansprache aber auf Schmerzreiz.<br>
+        Es sind Schnittwunden an den armen sichtbar.<br>
+        Um den Patienten ist viel Blut zusehen.
+    
+        <span>Weiter durch klicken</span>
+    </button>
+    <button id="btn2" class="btn hidden">
+        Bei A ist ein schnarchendes Atemgeräusch warzunehmen<br>Der Puls ist zentral gut tastbar<br> peripher ist er schwach tastbar.<br>
+        Die Rekapzeit ist über 2 sekunden.
+        <span>Weiter durch klicken</span>
+    </button>
+    <button id="btnCountdown1" class="btn hidden">
+        Sofortmaßnahme:<br>stabile Seitenlage<span id="countdown1" class="countdown"></span>
+    </button>
+    <button id="btnCountdown2" class="btn hidden">
+        Sofortmaßnahm:<br>Einlage Guedeltubus<span id="countdown2" class="countdown"></span>
+    </button>
+    <button id="btnCountdown3" class="btn hidden">
+       Keine Sofortmaßnahme nötig <br><span id="countdown3" class="countdown"></span>
+    </button>
+    <button id="btn3" class="btn hidden">
+        Die Atemwege konnten vorerst gesichert werden.<br>
+        Am Rücken sind Schnittwunden zu sehen.<br> aber es ist keine pulsierende Blutung sichtbar.
+        <span>Weiter durch klicken</span>
+    </button>
+    <button id="btnCustom" class="btn hidden">
+      Keine Atmung vorhanden<br>Kein zentraler Puls tastbar
+    </button>
+    <button id="btn4" class="btn hidden">
+        Sichtungskategorie wählen<br>und zum nächsten Patienten!
+    </button>
+</div>
+
+<!-- Modal für Bildanzeige -->
+<div id="modal">
+    <div id="modalContent">
+        <img src="VU SHT2.jpg" alt="VU SHT2">
+        <span id="closeModal">Schließen</span>
+    </div>
+</div>
+
+<!-- Einsatzabbruch-Button -->
+<a href="index.html" id="einsatzabbruchButton">Einsatzabbruch</a>
+
+<script>
+    let countdownIntervals = {};
+
+    function toggleButtons(currentButtonId, nextButtonId) {
+        // Alle Buttons ausblenden
+        document.querySelectorAll(".btn").forEach(btn => btn.classList.add("hidden"));
+        // Nur den nächsten Button anzeigen
+        document.getElementById(nextButtonId).classList.remove("hidden");
+    }
+
+    function startCountdown(buttonId, countdownId, nextButtonId, seconds) {
+        let countdownElement = document.getElementById(countdownId);
+        let timeLeft = seconds;
+        countdownElement.style.visibility = "visible";
+        countdownElement.innerText = timeLeft;
+        document.getElementById(buttonId).disabled = true;
+
+        countdownIntervals[buttonId] = setInterval(() => {
+            timeLeft--;
+            countdownElement.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(countdownIntervals[buttonId]);
+                // Nur den nächsten Button anzeigen
+                toggleButtons(buttonId, nextButtonId);
+            }
+        }, 1000);
+    }
+
+    function redirectToIndex() {
+        window.location.href = "index.html";
+    }
+
+    document.getElementById("btn1").addEventListener("click", function () {
+        toggleButtons("btn1", "btn2");
+    });
+
+    document.getElementById("btn2").addEventListener("click", function () {
+        toggleButtons("btn2", "btnCountdown1");
+        document.getElementById("btnCountdown2").classList.remove("hidden");
+        document.getElementById("btnCountdown3").classList.remove("hidden");
+        document.getElementById("modal").style.display = "flex"; // Bild wird angezeigt
+    });
+
+    document.getElementById("btnCountdown1").addEventListener("click", function () {
+        startCountdown("btnCountdown1", "countdown1", "btn3", 15);
+    });
+
+    document.getElementById("btnCountdown2").addEventListener("click", function () {
+        startCountdown("btnCountdown2", "countdown2", "btn3", 15);
+    });
+
+    document.getElementById("btnCountdown3").addEventListener("click", function () {
+        startCountdown("btnCountdown3", "countdown3", "btnCustom", 01);
+    });
+
+    document.getElementById("btn3").addEventListener("click", function () {
+        toggleButtons("btn3", "btn4");
+    });
+
+    document.getElementById("btnCustom").addEventListener("click", function () {
+        toggleButtons("btnCustom", "btn4");
+    });
+
+    document.getElementById("btn4").addEventListener("click", function () {
+        redirectToIndex();
+    });
+
+    // Schließen des Bildes durch Klick auf den Schließen-Button
+    document.getElementById("closeModal").addEventListener("click", function () {
+        document.getElementById("modal").style.display = "none";
+    });
+
+    // Schließen des Bildes durch Klick auf das Modal
+    document.getElementById("modal").addEventListener("click", function (e) {
+        if (e.target === document.getElementById("modal")) {
+            document.getElementById("modal").style.display = "none";
+        }
+    });
+</script>
+
+</body>
+</html>
